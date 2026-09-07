@@ -132,7 +132,6 @@ def generate_excel_report(df_filtered, df_annual):
         bottom=Side(style='thin', color='D9D9D9')
     )
     
-    # --- HOJA 1: RESUMEN EJECUTIVO ---
     ws1 = wb.active
     ws1.title = "Resumen Ejecutivo"
     ws1.views.sheetView[0].showGridLines = True
@@ -142,7 +141,6 @@ def generate_excel_report(df_filtered, df_annual):
     ws1['A2'] = f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
     ws1['A2'].font = font_subtitle
     
-    # Tarjetas KPIs
     kpis = [
         ("Total Viajes", len(df_filtered), "#,##0"),
         ("Manifiestos Totales", df_filtered['MANIFIESTOS'].sum(), "#,##0"),
@@ -179,7 +177,6 @@ def generate_excel_report(df_filtered, df_annual):
                 cell.fill = fill_kpi
                 cell.border = border_thin
 
-    # Tabla Resumen Anual
     start_row = 9
     ws1.cell(row=start_row, column=1, value="RESUMEN ACUMULADO POR AÑO").font = font_sec_header
     
@@ -203,7 +200,6 @@ def generate_excel_report(df_filtered, df_annual):
                 cell.fill = fill_zebra
         r_idx += 1
 
-    # --- HOJA 2: DETALLE DE OPERACIÓN ---
     ws2 = wb.create_sheet(title="Detalle de Operación")
     ws2.views.sheetView[0].showGridLines = True
     
@@ -232,7 +228,6 @@ def generate_excel_report(df_filtered, df_annual):
             elif col_name in ['PESO', 'VOLUME', 'CAPACIDAD']:
                 cell.number_format = "#,##0.0"
 
-    # Ajuste automático de anchos de columna
     for ws in [ws1, ws2]:
         for col in ws.columns:
             max_len = max(len(str(cell.value or '')) for cell in col)
@@ -276,12 +271,10 @@ def generate_pdf_report(df_filtered, df_annual):
 
     story = []
     
-    # Encabezado principal
     story.append(Paragraph("INFORME EJECUTIVO DE GESTIÓN LOGÍSTICA", title_style))
     story.append(Paragraph(f"<b>Fecha de emisión:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')} | <b>Total Registros:</b> {len(df_filtered):,}", subtitle_style))
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#1F4E78'), spaceAfter=12))
     
-    # 1. Tabla KPIs
     story.append(Paragraph("1. Indicadores Clave de Desempeño (KPIs)", sec_heading))
     kpi_data = [
         [
@@ -312,7 +305,6 @@ def generate_pdf_report(df_filtered, df_annual):
     story.append(t_kpi)
     story.append(Spacer(1, 10))
     
-    # 2. Resumen Anual
     story.append(Paragraph("2. Resumen de Flujo de Carga por Año", sec_heading))
     annual_data = [[
         Paragraph("<b>Año</b>", cell_header),
@@ -342,7 +334,6 @@ def generate_pdf_report(df_filtered, df_annual):
     story.append(t_annual)
     story.append(Spacer(1, 10))
 
-    # 3. Rankings
     story.append(Paragraph("3. Rankings Principales (Top Conductores y Rutas)", sec_heading))
     df_cond = df_filtered.groupby('NOMBRE_CONDUCTOR').size().reset_index(name='VIAJES')
     df_cond = df_cond[df_cond['NOMBRE_CONDUCTOR'] != 'N/A'].sort_values('VIAJES', ascending=False).head(5)
@@ -381,7 +372,6 @@ def generate_pdf_report(df_filtered, df_annual):
     story.append(t_rankings)
     story.append(Spacer(1, 12))
 
-    # 4. Observaciones
     story.append(Paragraph("4. Observaciones y Hallazgos Operativos", sec_heading))
     sub_viajes = df_filtered[df_filtered['VOLUME'] < 30].shape[0]
     pct_sub = (sub_viajes / len(df_filtered)) * 100 if len(df_filtered) > 0 else 0
@@ -403,7 +393,6 @@ def generate_pdf_report(df_filtered, df_annual):
 # -----------------------------------------------------------------------------
 st.sidebar.title("⚙️ Configuración")
 
-# Logo corporativo embebido (Ruta fija)
 LOGO_PATH = "Logo.png" if os.path.exists("Logo.png") else ("logo.png" if os.path.exists("logo.png") else None)
 
 if LOGO_PATH:
@@ -411,7 +400,6 @@ if LOGO_PATH:
 
 st.sidebar.markdown("---")
 
-# Carga de archivo CSV
 uploaded_file = st.sidebar.file_uploader("Importar archivo CSV", type=["csv"])
 
 if uploaded_file is not None:
@@ -424,7 +412,6 @@ else:
     st.warning("⚠️ Por favor sube un archivo `.csv` en la barra lateral.")
     st.stop()
 
-# Filtros dinámicos
 st.sidebar.subheader("Filtros de Operación")
 
 anos_disponibles = sorted([a for a in df_raw['AÑO'].unique() if a not in ['nan', 'N/A']])
@@ -475,7 +462,6 @@ with header_col2:
     if LOGO_PATH:
         st.image(LOGO_PATH, width=150)
 
-# Alertas automáticas
 viajes_subutilizados = df_filtered[df_filtered['VOLUME'] < 30].shape[0]
 total_viajes = df_filtered.shape[0]
 pct_sub = (viajes_subutilizados / total_viajes) * 100 if total_viajes > 0 else 0
@@ -483,7 +469,6 @@ pct_sub = (viajes_subutilizados / total_viajes) * 100 if total_viajes > 0 else 0
 if pct_sub > 15:
     st.warning(f"⚠️ **Alerta de Capacidad:** El **{pct_sub:.1f}%** de los viajes registrados ({viajes_subutilizados} despachos) salieron con menos del 30% de ocupación.")
 
-# Métricas KPIs
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
 kpi1.metric("Viajes Realizados", f"{len(df_filtered):,}")
 kpi2.metric("Envíos Totales (Manifiestos)", f"{int(df_filtered['MANIFIESTOS'].sum()):,}")
@@ -509,12 +494,13 @@ df_annual = df_filtered.groupby('AÑO').agg({
 # -----------------------------------------------------------------------------
 # 8. Organización en Pestañas (Tabs)
 # -----------------------------------------------------------------------------
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📊 Métricas Anuales", 
     "👨‍✈️ Conductores y Rutas", 
     "⏱️ Operación y Eficiencia", 
     "📄 Generación de Reportes",
-    "📋 Datos Auditables"
+    "📋 Datos Auditables",
+    "🗺️ Crecimiento x Año"
 ])
 
 # --- TAB 1: MÉTRICAS ANUALES ---
@@ -647,7 +633,7 @@ with tab3:
     st.plotly_chart(fig_operador, use_container_width=True)
 
 
-# --- TAB 4: GENERACIÓN DE REPORTES (PUNTO NO 5) ---
+# --- TAB 4: GENERACIÓN DE REPORTES ---
 with tab4:
     st.subheader("📄 Centro de Reportabilidad Ejecutiva Automatizada")
     st.markdown("Genera e imprime reportes oficiales ajustados dinámicamente a los filtros seleccionados en la barra lateral.")
@@ -718,3 +704,122 @@ with tab5:
 
     cols_a_mostrar = [c for c in ['AÑO', 'FECHA', 'HORA', 'RUTA', 'OPERADOR', 'NOMBRE_CONDUCTOR', 'PLACA', 'MANIFIESTOS', 'PESO', 'PIEZAS', 'CAPACIDAD'] if c in df_filtered.columns]
     st.dataframe(df_filtered[cols_a_mostrar], use_container_width=True)
+
+
+# =============================================================================
+# TAB 6: MÓDULO ANEXADO (Tablas Gráficas de Crecimiento YoY: Kilos y Piezas)
+# =============================================================================
+with tab6:
+    st.subheader("📈 Análisis de Crecimiento y Decrecimiento Anual (YoY)")
+    st.markdown(
+        "A continuación se presenta la evolución histórica de **Kilos** y **Piezas** movilizados por año, "
+        "incluyendo la variación absoluta y el porcentaje de crecimiento/decrecimiento respecto al año anterior (**Year-over-Year**). "
+        "Los valores con decrecimiento se resaltan automáticamente en <span style='color:#ef4444; font-weight:bold;'>color rojo</span>.",
+        unsafe_allow_html=True
+    )
+    st.markdown("---")
+
+    # 1. Preparación y cálculo de Variaciones Anuales (YoY)
+    df_yoy = df_annual.copy()
+    df_yoy['AÑO_NUM'] = pd.to_numeric(df_yoy['AÑO'], errors='coerce')
+    df_yoy = df_yoy.sort_values('AÑO_NUM').reset_index(drop=True)
+
+    # Cálculo YoY para Kilos (PESO)
+    df_yoy['VAR_PESO'] = df_yoy['PESO'].diff()
+    df_yoy['PCT_PESO'] = df_yoy['PESO'].pct_change() * 100
+
+    # Cálculo YoY para Piezas (PIEZAS)
+    df_yoy['VAR_PIEZAS'] = df_yoy['PIEZAS'].diff()
+    df_yoy['PCT_PIEZAS'] = df_yoy['PIEZAS'].pct_change() * 100
+
+    # 2. Función para aplicar formato dinámico (Rojo para Negativos / Verde para Positivos)
+    def style_yoy_dataframe(df_input, col_total, col_var, col_pct, unit_label, is_float=True):
+        df_sub = df_input[['AÑO', col_total, col_var, col_pct]].copy()
+        
+        col_total_title = f"Total ({unit_label})"
+        col_var_title = f"Variación YoY ({unit_label})"
+        col_pct_title = "Crecimiento YoY (%)"
+        
+        df_sub.columns = ['Año', col_total_title, col_var_title, col_pct_title]
+        
+        def highlight_vals(val):
+            if pd.isna(val) or val == "-":
+                return 'color: #888888; font-style: italic;'
+            if isinstance(val, (int, float)):
+                if val < 0:
+                    return 'color: #ef4444; font-weight: bold; background-color: rgba(239, 68, 68, 0.12);'
+                elif val > 0:
+                    return 'color: #10b981; font-weight: bold; background-color: rgba(16, 185, 129, 0.12);'
+            return ''
+
+        fmt_dict = {
+            'Año': '{}',
+            col_total_title: (lambda x: f"{x:,.1f}".replace(',', 'X').replace('.', ',').replace('X', '.')) if is_float else (lambda x: f"{x:,.0f}".replace(',', '.')),
+            col_var_title: lambda x: '-' if pd.isna(x) else ((f"{x:+,.1f}".replace(',', 'X').replace('.', ',').replace('X', '.')) if is_float else f"{x:+,.0f}".replace(',', '.')),
+            col_pct_title: lambda x: '-' if pd.isna(x) else f"{x:+.2f}%".replace('.', ',')
+        }
+
+        styler = df_sub.style.format(fmt_dict)
+        if hasattr(styler, 'map'):
+            return styler.map(highlight_vals, subset=[col_var_title, col_pct_title])
+        else:
+            return styler.applymap(highlight_vals, subset=[col_var_title, col_pct_title])
+
+    # 3. Disposición en dos columnas paralelas
+    col_kilos, col_piezas = st.columns(2)
+
+    # --- TABLA Y GRÁFICO 1: KILOS (PESO) ---
+    with col_kilos:
+        st.markdown("### ⚖️ Total de Kilos por Año y Variación YoY")
+        
+        # Generar Tabla Estilizada
+        styler_kilos = style_yoy_dataframe(df_yoy, 'PESO', 'VAR_PESO', 'PCT_PESO', 'kg', is_float=True)
+        st.dataframe(styler_kilos, use_container_width=True, hide_index=True)
+
+        # Gráfico Complementario de Variación
+        df_k_plot = df_yoy.dropna(subset=['PCT_PESO']).copy()
+        df_k_plot['COLOR'] = df_k_plot['PCT_PESO'].apply(lambda x: 'Decrecimiento' if x < 0 else 'Crecimiento')
+        
+        fig_k_yoy = px.bar(
+            df_k_plot, 
+            x='AÑO', 
+            y='PCT_PESO', 
+            color='COLOR',
+            color_discrete_map={'Decrecimiento': '#ef4444', 'Crecimiento': '#10b981'},
+            text_auto='+.1f',
+            labels={'PCT_PESO': 'Variación YoY (%)', 'AÑO': 'Año', 'COLOR': 'Tendencia'},
+            title="Tendencia YoY (%) - Kilos"
+        )
+        fig_k_yoy.update_traces(textposition='outside')
+        fig_k_yoy.update_layout(template='plotly_white', margin=dict(l=10, r=10, t=40, b=10), showlegend=False)
+        st.plotly_chart(fig_k_yoy, use_container_width=True)
+
+    # --- TABLA Y GRÁFICO 2: PIEZAS ---
+    with col_piezas:
+        st.markdown("### 🧩 Total de Piezas por Año y Variación YoY")
+        
+        # Generar Tabla Estilizada
+        styler_piezas = style_yoy_dataframe(df_yoy, 'PIEZAS', 'VAR_PIEZAS', 'PCT_PIEZAS', 'Unid', is_float=False)
+        st.dataframe(styler_piezas, use_container_width=True, hide_index=True)
+
+        # Gráfico Complementario de Variación
+        df_p_plot = df_yoy.dropna(subset=['PCT_PIEZAS']).copy()
+        df_p_plot['COLOR'] = df_p_plot['PCT_PIEZAS'].apply(lambda x: 'Decrecimiento' if x < 0 else 'Crecimiento')
+        
+        fig_p_yoy = px.bar(
+            df_p_plot, 
+            x='AÑO', 
+            y='PCT_PIEZAS', 
+            color='COLOR',
+            color_discrete_map={'Decrecimiento': '#ef4444', 'Crecimiento': '#10b981'},
+            text_auto='+.1f',
+            labels={'PCT_PIEZAS': 'Variación YoY (%)', 'AÑO': 'Año', 'COLOR': 'Tendencia'},
+            title="Tendencia YoY (%) - Piezas"
+        )
+        fig_p_yoy.update_traces(textposition='outside')
+        fig_p_yoy.update_layout(template='plotly_white', margin=dict(l=10, r=10, t=40, b=10), showlegend=False)
+        st.plotly_chart(fig_p_yoy, use_container_width=True)
+
+    st.markdown("---")
+
+    
