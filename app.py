@@ -412,19 +412,39 @@ else:
     st.warning("⚠️ Por favor sube un archivo `.csv` en la barra lateral.")
     st.stop()
 
+
+
+
+# -----------------------------------------------------------------------------
+# Filtros de Operación Blindados
+# -----------------------------------------------------------------------------
 st.sidebar.subheader("Filtros de Operación")
 
-anos_disponibles = sorted([a for a in df_raw['AÑO'].unique() if a not in ['nan', 'N/A']])
+anos_disponibles = sorted([
+    str(a).strip() for a in df_raw['AÑO'].unique() 
+    if pd.notna(a) and str(a).strip() not in ['nan', 'N/A', 'None', '']
+])
 selected_anos = st.sidebar.multiselect("Año(s)", anos_disponibles)
 
-operadores_disponibles = sorted([op for op in df_raw['OPERADOR'].unique() if op not in ['nan', 'N/A']])
+operadores_disponibles = sorted([
+    str(op).strip() for op in df_raw['OPERADOR'].unique() 
+    if pd.notna(op) and str(op).strip() not in ['nan', 'N/A', 'None', '']
+])
 selected_operadores = st.sidebar.multiselect("Operador(es) Logístico(s)", operadores_disponibles)
 
-rutas_disponibles = sorted([r for r in df_raw['RUTA'].unique() if r not in ['nan', 'N/A']])
+rutas_disponibles = sorted([
+    str(r).strip() for r in df_raw['RUTA'].unique() 
+    if pd.notna(r) and str(r).strip() not in ['nan', 'N/A', 'None', '']
+])
 selected_rutas = st.sidebar.multiselect("Ruta(s)", rutas_disponibles)
 
-conductores_disponibles = sorted([c for c in df_raw['NOMBRE_CONDUCTOR'].unique() if c not in ['nan', 'N/A']])
+conductores_disponibles = sorted([
+    str(c).strip() for c in df_raw['NOMBRE_CONDUCTOR'].unique() 
+    if pd.notna(c) and str(c).strip() not in ['nan', 'N/A', 'None', '']
+])
 selected_conductores = st.sidebar.multiselect("Conductor(es)", conductores_disponibles)
+
+
 
 
 # -----------------------------------------------------------------------------
@@ -455,7 +475,7 @@ if df_filtered.empty:
 header_col1, header_col2 = st.columns([4, 1])
 
 with header_col1:
-    st.title("🚚 Dashboard de Gestión Logística Nacional")
+    st.title(" 🚚  Gestión Logística Nacional 4-72 ")
     st.markdown("Visualización estratégica del flujo operativo, capacidad y eficiencia.")
 
 with header_col2:
