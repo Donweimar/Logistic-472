@@ -821,5 +821,3 @@ with tab6:
         st.plotly_chart(fig_p_yoy, use_container_width=True)
 
     st.markdown("---")
-
-    
