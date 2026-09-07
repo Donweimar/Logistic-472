@@ -578,7 +578,7 @@ with tab2:
             st.info("No hay información de conductores disponible en el archivo cargado.")
 
     with col_rutas:
-        st.markdown("##### 📍 Top 10 Rutas de Mayor Impacto (Por Peso)")
+        st.markdown("##### 📍 Top 10 Rutas Peso transportado")
         df_rutas = df_filtered.groupby('RUTA')['PESO'].sum().reset_index()
         df_top_rutas = df_rutas.sort_values(by='PESO', ascending=False).head(10)
         
@@ -593,6 +593,28 @@ with tab2:
             margin=dict(l=10, r=10, t=30, b=10)
         )
         st.plotly_chart(fig_rutas, use_container_width=True)
+
+
+
+
+    with col_rutas:
+        st.markdown("##### 📍 Top 10 Rutas Piezas Transportadas")
+        df_rutas = df_filtered.groupby('RUTA')['PIEZAS'].sum().reset_index()
+        df_top_rutas = df_rutas.sort_values(by='PIEZAS', ascending=False).head(10)
+        
+        fig_rutas = px.bar(
+            df_top_rutas, x='PIEZAS', y='RUTA', orientation='h',
+            template='plotly_white', color_discrete_sequence=["#06d47e"],
+            text_auto='.2s'
+        )
+        fig_rutas.update_layout(
+            yaxis={'categoryorder': 'total ascending'},
+            xaxis_title="Piezas Total Movilizadas", yaxis_title="",
+            margin=dict(l=10, r=10, t=30, b=10)
+        )
+        st.plotly_chart(fig_rutas, use_container_width=True)
+
+
 
 
 # --- TAB 3: OPERACIÓN Y EFICIENCIA ---
